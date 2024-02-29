@@ -33,3 +33,7 @@ class Program
 }
 
 ```
+
+```
+dotnet add package PuppeteerSharp
+```
