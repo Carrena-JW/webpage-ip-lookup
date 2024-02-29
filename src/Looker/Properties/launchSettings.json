@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Looker": {
+      "commandName": "Project",
+      "commandLineArgs": "tuyttps://www.yes24.com"
+    }
+  }
+}
