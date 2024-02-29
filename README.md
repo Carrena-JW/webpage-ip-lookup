@@ -69,3 +69,32 @@ class Program
 }
 
 ```
+
+### Dns list
+한국의 주요 통신사들이 제공하는 DNS 서버의 주소는 아래와 같습니다:
+
+KT (Korea Telecom):
+기본 DNS: 168.126.63.1
+보조 DNS: 168.126.63.2
+SK Broadband (구 SK 텔레콤):
+기본 DNS: 210.220.163.82
+보조 DNS: 219.250.36.130
+LG U+:
+기본 DNS: 164.124.101.2
+보조 DNS: 203.248.252.2
+
+Google Public DNS:
+기본 DNS: 8.8.8.8
+보조 DNS: 8.8.4.4
+Cloudflare DNS:
+기본 DNS: 1.1.1.1
+보조 DNS: 1.0.0.1
+OpenDNS:
+기본 DNS: 208.67.222.222
+보조 DNS: 208.67.220.220
+Quad9:
+기본 DNS: 9.9.9.9
+보조 DNS: 149.112.112.112
+DNS.WATCH:
+기본 DNS: 84.200.69.80
+보조 DNS: 84.200.70.40
