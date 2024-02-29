@@ -98,3 +98,21 @@ Quad9:
 DNS.WATCH:
 기본 DNS: 84.200.69.80
 보조 DNS: 84.200.70.40
+
+### sample codes (javascript)
+```javascript
+var visitedUrls = [];
+
+window.onpopstate = function(event) {
+    addUrl(window.location.href);
+};
+
+// 처음 페이지를 로딩할 때 현재 URL을 추가합니다.
+addUrl(window.location.href);
+
+function addUrl(url) {
+    if (!visitedUrls.includes(url)) {
+        visitedUrls.push(url);
+    }
+}
+```
