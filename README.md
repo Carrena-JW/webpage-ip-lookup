@@ -116,3 +116,30 @@ function addUrl(url) {
     }
 }
 ```
+
+### sample codes
+```cs
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        string urlString = "http://www.example.com";
+
+        Uri uriResult;
+        bool result = Uri.TryCreate(urlString, UriKind.Absolute, out uriResult)
+            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
+        if (result)
+        {
+            Console.WriteLine($"'{urlString}' is a valid URL.");
+        }
+        else
+        {
+            Console.WriteLine($"'{urlString}' is not a valid URL.");
+        }
+    }
+}
+
+```
