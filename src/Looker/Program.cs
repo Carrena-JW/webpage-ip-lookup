@@ -1,4 +1,6 @@
 ﻿using DnsClient;
+using DnsClient.Protocol;
+using Newtonsoft.Json.Serialization;
 using OpenQA.Selenium.Edge;
 using PuppeteerSharp;
 using System.Net;
@@ -10,10 +12,21 @@ class Program
     static HashSet<string> _dns = new HashSet<string>
     {
         "168.126.63.1", // KT
-        "192.168.103.140", //Default DNS1
-        "192.168.103.141", //Default DNS2
+#if DEBUG
+       
+        "192.168.103.140",
+        "192.168.103.141",
+#else
+        "210.220.163.82", //Default DNS1
+        "164.124.101.2", //Default DNS2
+        "8.8.8.8",
+        "1.1.1.1",
+        "208.67.222.222",
+        "9.9.9.9",
+        "84.200.69.80"
+#endif
     };
-
+    static string _resultSaveFileName = "result.txt";
 
     /// <summary>
     /// Main Method
@@ -26,7 +39,7 @@ class Program
         Console.WriteLine("Enter url:");
         var input = Console.ReadLine();
 
-        if(input.Length > 0 )
+        if(string.IsNullOrEmpty(input) is not true)
         {
             var paramUri = input;
 
@@ -34,6 +47,11 @@ class Program
                 && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
             {
                startAtUrl = paramUri.ToString();
+            }
+            else
+            {
+                Console.WriteLine("Invalid Url, exit program");
+                return;
             }
  
         }
@@ -43,6 +61,7 @@ class Program
         var visitedUrls = new HashSet<string>();
          
         driver.Url = startAtUrl;
+        visitedUrls.Add(startAtUrl);
 
         while (true)
         {
@@ -84,9 +103,12 @@ class Program
         // loop visitedUrl
         foreach (var v in visitedUrls)
         {
+            SaveUrl(v);
             // Go to specific url
             await page.GoToAsync(v);
         }
+
+        Task.Delay(2000).Wait();
 
         // Resolve urls
         foreach(var url in _urls)
@@ -94,14 +116,25 @@ class Program
             await LookupUrl(url);
         }
 
+
+        
+        if (File.Exists(_resultSaveFileName))
+        {
+            File.Delete(_resultSaveFileName);
+        }
+
         // Display results
         foreach(var item in _results)
         {
             foreach(var ip in item.Value)
             {
-                Console.WriteLine($"Host: {item.Key}\nResolved: {ip}\n");
+                var msg = $"Host: {item.Key}\nResolved: {ip}\n";
+                Console.WriteLine(msg);
+                File.WriteAllText(_resultSaveFileName, msg);
             }
         }
+
+        Console.ReadLine();
     }
 
     /// <summary>
@@ -142,11 +175,7 @@ class Program
 
             if(dnsIp is not null)
             {
-                var lookup = new LookupClient(dnsIp);
-                var result = await lookup.QueryAsync(host, QueryType.ANY);
-                var records = result.Answers.ARecords();
-
-                var ips =  records.Select(x =>  x.Address.ToString());
+                var ips = await GetDnsQueryResultAsync(dnsIp, new HashSet<string> { host } );
 
                 foreach(var ip in ips)
                 {
@@ -169,4 +198,28 @@ class Program
             }
         }
     }
+
+    static async Task<HashSet<string>> GetDnsQueryResultAsync(IPAddress ip, HashSet<string> hostNames)
+    {
+        var ips = new HashSet<string>();
+        
+        foreach (var host in hostNames)
+        {
+            var lookup = new LookupClient(ip);
+            var response = await lookup.QueryAsync(host, QueryType.ANY);
+            var aRecordIps = response.Answers.ARecords().Select(x => x.Address.ToString()).ToHashSet();
+
+            ips = ips.Concat(aRecordIps).ToHashSet();
+
+            var cNameRecords = response.Answers.CnameRecords();
+            if (cNameRecords.Any())
+            {
+                var cNameResult = await GetDnsQueryResultAsync(ip, cNameRecords.Select(x => x.CanonicalName.Value).ToHashSet());
+                ips = ips.Concat(cNameResult).ToHashSet();
+            }
+        }
+
+        return ips;
+    } 
+   
 }
