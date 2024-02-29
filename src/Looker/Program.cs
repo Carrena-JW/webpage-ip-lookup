@@ -19,14 +19,16 @@ class Program
     /// Main Method
     /// </summary>
     /// <returns></returns>
-    static async Task Main(string[] args)
+    static async Task Main()
     {
         var startAtUrl = "https://www.google.com";
 
+        Console.WriteLine("Enter url:");
+        var input = Console.ReadLine();
 
-        if(args.Length > 0 )
+        if(input.Length > 0 )
         {
-            var paramUri = args[0];
+            var paramUri = input;
 
             if (Uri.TryCreate(paramUri, UriKind.Absolute, out var uriResult)
                 && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
