@@ -1,11 +1,7 @@
 ﻿using DnsClient;
-using DnsClient.Protocol;
-using Newtonsoft.Json.Serialization;
 using OpenQA.Selenium.Edge;
 using PuppeteerSharp;
-using System;
 using System.Net;
-using System.Runtime.CompilerServices;
 
 class Program
 {
@@ -221,7 +217,7 @@ class Program
     static async Task<HashSet<string>> GetDnsQueryResultAsync(IPAddress ip, HashSet<string> hostNames)
     {
         var ips = new HashSet<string>();
-        
+         
 
         foreach (var host in hostNames)
         {
