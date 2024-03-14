@@ -246,12 +246,14 @@ class Program
 
 
 
-            static void LoggingWithColor(string msg, ConsoleColor color)
-            {
-                Console.ForegroundColor = color;
-                Console.WriteLine(msg);
-                Console.ResetColor();
-            }
+           
         }
+    }
+
+    static void LoggingWithColor(string msg, ConsoleColor color)
+    {
+        Console.ForegroundColor = color;
+        Console.WriteLine(msg);
+        Console.ResetColor();
     }
 }
