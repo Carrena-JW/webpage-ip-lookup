@@ -136,7 +136,7 @@ class Program
                     {
                         var msg = $"Host: {item.Key}\nResolved: {ip}\n";
                         LoggingWithColor(msg, ConsoleColor.Green);
-                        File.WriteAllText(_resultSaveFileName, msg);
+                        await File.AppendAllTextAsync(_resultSaveFileName, msg);
                     }
                 }
 
