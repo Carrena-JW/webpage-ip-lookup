@@ -1,6 +1,4 @@
 ﻿using DnsClient;
-using DnsClient.Protocol;
-using Newtonsoft.Json.Serialization;
 using OpenQA.Selenium.Edge;
 using PuppeteerSharp;
 using System.Net;
@@ -8,7 +6,7 @@ using System.Net;
 class Program
 {
     static HashSet<string> _urls = new HashSet<string>();
-    static Dictionary<string,HashSet<string>> _results =new Dictionary<string, HashSet<string>>(); // key: url, value: IP
+    static Dictionary<string,HashSet<string>> _results = new Dictionary<string, HashSet<string>>(); // key: url, value: IP
     static HashSet<string> _dns = new HashSet<string>
     {
         "168.126.63.1", // KT
@@ -85,37 +83,37 @@ class Program
 
         driver.Quit();
         Console.Clear();
-        
 
 
         // Init browser
         await new BrowserFetcher().DownloadAsync();
 
         // Run browser
-        using var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true });
+        using (var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true }))
+        {
+            using (var page = await browser.NewPageAsync())
+            {
+                // Catch request urls
+                page.Request += (sender, e) => SaveUrl(e.Request.Url);
+
+                // loop visitedUrl
+                foreach (var v in visitedUrls)
+                {
+                    SaveUrl(v);
+                    // Go to specific url
+                    await page.GoToAsync(v);
+                }
+            }
+        }
         
         // Create new tab
-        using var page = await browser.NewPageAsync();
-
-        // Catch request urls
-        page.Request += (sender, e) => SaveUrl(e.Request.Url);
-
-        // loop visitedUrl
-        foreach (var v in visitedUrls)
-        {
-            SaveUrl(v);
-            // Go to specific url
-            await page.GoToAsync(v);
-        }
-
-        Task.Delay(2000).Wait();
+        Task.Delay(5000).Wait();
 
         // Resolve urls
         foreach(var url in _urls)
         {
             await LookupUrl(url);
         }
-
 
         
         if (File.Exists(_resultSaveFileName))
@@ -130,7 +128,7 @@ class Program
             {
                 var msg = $"Host: {item.Key}\nResolved: {ip}\n";
                 Console.WriteLine(msg);
-                File.WriteAllText(_resultSaveFileName, msg);
+                await File.AppendAllTextAsync(_resultSaveFileName, msg);
             }
         }
 
@@ -193,7 +191,6 @@ class Program
                     inputvalues.Add(ip);
 
                     _results[host] = inputvalues;
-
                 }
             }
         }
