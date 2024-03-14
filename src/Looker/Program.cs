@@ -10,19 +10,12 @@ class Program
     static HashSet<string> _dns = new HashSet<string>
     {
         "168.126.63.1", // KT
-#if DEBUG
-       
-        "192.168.103.140",
-        "192.168.103.141",
-#else
         "210.220.163.82", //Default DNS1
         "164.124.101.2", //Default DNS2
         "8.8.8.8",
         "1.1.1.1",
         "208.67.222.222",
         "9.9.9.9",
-        "84.200.69.80"
-#endif
     };
     static string _resultSaveFileName = "result.txt";
 
@@ -33,26 +26,36 @@ class Program
     static async Task Main()
     {
         var startAtUrl = "https://www.google.com";
+        var input = string.Empty;
 
-        Console.WriteLine("Enter url:");
-        var input = Console.ReadLine();
-
-        if(string.IsNullOrEmpty(input) is not true)
+        bool  isLoop = true;
+        while(isLoop)
         {
+            LoggingWithColor("Please enter the address of the web page you want to visit: ", ConsoleColor.Magenta);
+            LoggingWithColor("=> i.g. https://www.google.com", ConsoleColor.Green);
+            input = Console.ReadLine();
             var paramUri = input;
 
             if (Uri.TryCreate(paramUri, UriKind.Absolute, out var uriResult)
                 && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
             {
-               startAtUrl = paramUri.ToString();
+                startAtUrl = paramUri.ToString();
+                Console.Clear();
+                isLoop = false;
             }
             else
             {
-                Console.WriteLine("Invalid Url, exit program");
-                return;
+                LoggingWithColor("Invalid Url, please re-enter it.\n", ConsoleColor.Red);
+                Console.WriteLine();
             }
- 
+            Console.ForegroundColor = ConsoleColor.White;
         }
+
+
+
+
+
+
 
         //Run browser
         var driver = new EdgeDriver();
@@ -86,7 +89,10 @@ class Program
 
 
         // Init browser
+        Console.WriteLine("Starting download BrowserFetcher.....");
         await new BrowserFetcher().DownloadAsync();
+        Console.WriteLine("Successed download");
+
 
         // Run browser
         using (var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true }))
@@ -96,22 +102,22 @@ class Program
                 // Catch request urls
                 page.Request += (sender, e) => SaveUrl(e.Request.Url);
 
-                // loop visitedUrl
-                foreach (var v in visitedUrls)
-                {
-                    SaveUrl(v);
-                    // Go to specific url
-                    await page.GoToAsync(v);
-                }
-            }
+        // loop visitedUrl
+        foreach (var v in visitedUrls)
+        {
+            SaveUrl(v);
+            // Go to specific url
+            LoggingWithColor($"Collecting request URL: {v}", ConsoleColor.Yellow);
+            await page.GoToAsync(v);
         }
-        
-        // Create new tab
-        Task.Delay(5000).Wait();
+
+        Console.WriteLine();
+        Task.Delay(2000).Wait();
 
         // Resolve urls
         foreach(var url in _urls)
         {
+            LoggingWithColor($"Resolve IP from DNS: {url}", ConsoleColor.Yellow);
             await LookupUrl(url);
         }
 
@@ -122,13 +128,15 @@ class Program
         }
 
         // Display results
-        foreach(var item in _results)
+        Console.WriteLine();
+        LoggingWithColor($"########## Results #########", ConsoleColor.Green);
+        foreach (var item in _results)
         {
             foreach(var ip in item.Value)
             {
                 var msg = $"Host: {item.Key}\nResolved: {ip}\n";
-                Console.WriteLine(msg);
-                await File.AppendAllTextAsync(_resultSaveFileName, msg);
+                LoggingWithColor(msg, ConsoleColor.Green);
+                File.WriteAllText(_resultSaveFileName, msg);
             }
         }
 
@@ -196,27 +204,52 @@ class Program
         }
     }
 
+    /// <summary>
+    /// Step03-1: Recursive method
+    /// </summary>
+    /// <param name="ip"></param>
+    /// <param name="hostNames"></param>
+    /// <returns></returns>
     static async Task<HashSet<string>> GetDnsQueryResultAsync(IPAddress ip, HashSet<string> hostNames)
     {
         var ips = new HashSet<string>();
-        
+         
+
         foreach (var host in hostNames)
         {
-            var lookup = new LookupClient(ip);
-            var response = await lookup.QueryAsync(host, QueryType.ANY);
-            var aRecordIps = response.Answers.ARecords().Select(x => x.Address.ToString()).ToHashSet();
-
-            ips = ips.Concat(aRecordIps).ToHashSet();
-
-            var cNameRecords = response.Answers.CnameRecords();
-            if (cNameRecords.Any())
+            try
             {
-                var cNameResult = await GetDnsQueryResultAsync(ip, cNameRecords.Select(x => x.CanonicalName.Value).ToHashSet());
-                ips = ips.Concat(cNameResult).ToHashSet();
+                var lookup = new LookupClient(ip);
+                var response = await lookup.QueryAsync(host, QueryType.ANY);
+                var aRecordIps = response.Answers.ARecords().Select(x => x.Address.ToString()).ToHashSet();
+
+                ips = ips.Concat(aRecordIps).ToHashSet();
+
+                var cNameRecords = response.Answers.CnameRecords();
+                if (cNameRecords.Any())
+                {
+                    var cNameResult = await GetDnsQueryResultAsync(ip, cNameRecords.Select(x => x.CanonicalName.Value).ToHashSet());
+                    ips = ips.Concat(cNameResult).ToHashSet();
+                }
             }
+            catch (Exception ex)
+            {
+                LoggingWithColor($"There was a problem solving the name in DNS.", ConsoleColor.Red);
+                LoggingWithColor($"Dns: {ip}\nHostName: {host}", ConsoleColor.Red);
+                LoggingWithColor(ex.Message, ConsoleColor.Red);
+            }
+            
         }
 
         return ips;
     } 
    
+
+
+    static void LoggingWithColor(string msg, ConsoleColor color)
+    {
+        Console.ForegroundColor = color;
+        Console.WriteLine(msg);
+        Console.ResetColor();
+    }
 }
