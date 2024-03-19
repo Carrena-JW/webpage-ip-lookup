@@ -105,10 +105,18 @@ class Program
                 // loop visitedUrl
                 foreach (var v in visitedUrls)
                 {
-                    SaveUrl(v);
-                    // Go to specific url
-                    LoggingWithColor($"Collecting request URL: {v}", ConsoleColor.Yellow);
-                    await page.GoToAsync(v);
+                    try
+                    {
+                        SaveUrl(v);
+                        // Go to specific url
+                        LoggingWithColor($"Collecting request URL: {v}", ConsoleColor.Yellow);
+                        await page.GoToAsync(v);
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggingWithColor(ex.Message, ConsoleColor.Red);
+                    }
+                   
                 }
 
                 Console.WriteLine();
@@ -117,8 +125,15 @@ class Program
                 // Resolve urls
                 foreach (var url in _urls)
                 {
-                    LoggingWithColor($"Resolve IP from DNS: {url}", ConsoleColor.Yellow);
-                    await LookupUrl(url);
+                    try
+                    {
+                        LoggingWithColor($"Resolve IP from DNS: {url}", ConsoleColor.Yellow);
+                        await LookupUrl(url);
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggingWithColor(ex.Message, ConsoleColor.Red);
+                    }
                 }
 
 
@@ -134,9 +149,17 @@ class Program
                 {
                     foreach (var ip in item.Value)
                     {
-                        var msg = $"Host: {item.Key}\nResolved: {ip}\n";
-                        LoggingWithColor(msg, ConsoleColor.Green);
-                        await File.AppendAllTextAsync(_resultSaveFileName, msg);
+                        try
+                        {
+                            var msg = $"Host: {item.Key}\nResolved: {ip}\n";
+                            LoggingWithColor(msg, ConsoleColor.Green);
+                            await File.AppendAllTextAsync(_resultSaveFileName, msg);
+                        }
+                        catch (Exception ex)
+                        {
+                            LoggingWithColor(ex.Message, ConsoleColor.Red);
+                        }
+
                     }
                 }
 
